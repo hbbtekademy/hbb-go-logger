@@ -160,13 +160,14 @@ func (l stdLogger) errorf(format string, v ...interface{}) {
 
 func (l *stdLogger) fatal(v ...interface{}) {
 	if logLevel <= loglevel.FATAL {
-		l.fatalLogger.Output(3, fmt.Sprintln(v...))
+		l.fatalLogger.Output(3, fmt.Sprintf("%s. Exiting...", v...))
 	}
 	os.Exit(1)
 }
 
 func (l stdLogger) fatalf(format string, v ...interface{}) {
 	if logLevel <= loglevel.FATAL {
+		format = format + ". Exiting..."
 		l.fatalLogger.Output(3, fmt.Sprintf(format, v...))
 	}
 	os.Exit(1)
@@ -174,7 +175,7 @@ func (l stdLogger) fatalf(format string, v ...interface{}) {
 
 func (l *stdLogger) panic(v ...interface{}) {
 	if logLevel <= loglevel.PANIC {
-		s := fmt.Sprintln(v...)
+		s := fmt.Sprintf("%s. Panicing...", v...)
 		l.panicLogger.Output(3, s)
 		panic(s)
 	}
@@ -182,6 +183,7 @@ func (l *stdLogger) panic(v ...interface{}) {
 
 func (l stdLogger) panicf(format string, v ...interface{}) {
 	if logLevel <= loglevel.PANIC {
+		format = format + ". Panicing..."
 		s := fmt.Sprintf(format, v...)
 		l.panicLogger.Output(3, s)
 		panic(s)

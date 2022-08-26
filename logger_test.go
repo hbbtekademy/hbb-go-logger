@@ -122,7 +122,7 @@ func TestFatalLogging(t *testing.T) {
 	}
 
 	actualLog := runCmd(t, "TestFatalLogging", envVar)
-	expectedLog := "Test fatal log\n"
+	expectedLog := "Test fatal log. Exiting...\n"
 	verify(t, actualLog, expectedLog, loglevel.FATAL.String())
 }
 
@@ -135,7 +135,7 @@ func TestFatalfLogging(t *testing.T) {
 	}
 
 	actualLog := runCmd(t, "TestFatalfLogging", envVar)
-	expectedLog := "Test fatalf log: 3 fatalf\n"
+	expectedLog := "Test fatalf log: 3 fatalf. Exiting...\n"
 	verify(t, actualLog, expectedLog, loglevel.FATAL.String())
 }
 
@@ -146,7 +146,7 @@ func TestPanicLogging(t *testing.T) {
 		if r := recover(); r == nil {
 			t.Error("Expected code to panic but did not")
 		}
-		expectedLog := "Test Panic Log\n"
+		expectedLog := "Test Panic Log. Panicing...\n"
 		actualLog := buf.String()
 		verify(t, actualLog, expectedLog, logLevel.String())
 	}()
@@ -163,7 +163,7 @@ func TestPanicfLogging(t *testing.T) {
 			t.Error("Expected code to panic but did not")
 		}
 
-		expectedLog := "Test Panic Log: 10 panic\n"
+		expectedLog := "Test Panic Log: 10 panic. Panicing...\n"
 		actualLog := buf.String()
 		verify(t, actualLog, expectedLog, logLevel.String())
 	}()
