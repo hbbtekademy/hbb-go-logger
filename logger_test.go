@@ -36,7 +36,7 @@ func TestRedirectStderr(t *testing.T) {
 }
 
 func TestInfoLogging(t *testing.T) {
-	logLevel = loglevel.DEBUG
+	logLevel = loglevel.INFO
 
 	redirectLogOutputs()
 	defer buf.Reset()
@@ -45,16 +45,12 @@ func TestInfoLogging(t *testing.T) {
 	expectedLog := "Test Info Log\n"
 	actualLog := buf.String()
 
-	if !strings.HasPrefix(actualLog, "INFO") {
-		t.Errorf("Expected log to start with INFO instead got: %s", actualLog)
-	}
-	if !strings.HasSuffix(actualLog, expectedLog) {
-		t.Errorf("Expected log to end with '%s' instead got: %s", expectedLog, actualLog)
-	}
+	verify(t, actualLog, expectedLog, logLevel.String())
 }
 
 func TestInfofLogging(t *testing.T) {
 	logLevel = loglevel.INFO
+
 	redirectLogOutputs()
 	defer buf.Reset()
 
@@ -62,12 +58,7 @@ func TestInfofLogging(t *testing.T) {
 	expectedLog := "Test Info Log: 1 str\n"
 	actualLog := buf.String()
 
-	if !strings.HasPrefix(actualLog, "INFO") {
-		t.Errorf("Expected log to start with INFO instead got: %s", actualLog)
-	}
-	if !strings.HasSuffix(actualLog, expectedLog) {
-		t.Errorf("Expected log to end with '%s' instead got: %s", expectedLog, actualLog)
-	}
+	verify(t, actualLog, expectedLog, logLevel.String())
 }
 
 func TestDebugLogging(t *testing.T) {
@@ -80,12 +71,7 @@ func TestDebugLogging(t *testing.T) {
 	expectedLog := "Test Debug Log\n"
 	actualLog := buf.String()
 
-	if !strings.HasPrefix(actualLog, "DEBUG") {
-		t.Errorf("Expected log to start with DEBUG instead got: %s", actualLog)
-	}
-	if !strings.HasSuffix(actualLog, expectedLog) {
-		t.Errorf("Expected log to end with '%s' instead got: %s", expectedLog, actualLog)
-	}
+	verify(t, actualLog, expectedLog, logLevel.String())
 }
 
 func TestErrorLogging(t *testing.T) {
@@ -98,12 +84,7 @@ func TestErrorLogging(t *testing.T) {
 	expectedLog := "Test Error Log\n"
 	actualLog := buf.String()
 
-	if !strings.HasPrefix(actualLog, "ERROR") {
-		t.Errorf("Expected log to start with ERROR instead got: %s", actualLog)
-	}
-	if !strings.HasSuffix(actualLog, expectedLog) {
-		t.Errorf("Expected log to end with '%s' instead got: %s", expectedLog, actualLog)
-	}
+	verify(t, actualLog, expectedLog, logLevel.String())
 }
 
 func TestDebugfLogging(t *testing.T) {
@@ -116,12 +97,7 @@ func TestDebugfLogging(t *testing.T) {
 	expectedLog := "Test Debug Log: 2 debug\n"
 	actualLog := buf.String()
 
-	if !strings.HasPrefix(actualLog, "DEBUG") {
-		t.Errorf("Expected log to start with DEBUG instead got: %s", actualLog)
-	}
-	if !strings.HasSuffix(actualLog, expectedLog) {
-		t.Errorf("Expected log to end with '%s' instead got: %s", expectedLog, actualLog)
-	}
+	verify(t, actualLog, expectedLog, logLevel.String())
 }
 
 func TestErrorfLogging(t *testing.T) {
@@ -134,79 +110,99 @@ func TestErrorfLogging(t *testing.T) {
 	expectedLog := "Test Errorf Log: 2 errorf\n"
 	actualLog := buf.String()
 
-	if !strings.HasPrefix(actualLog, "ERROR") {
-		t.Errorf("Expected log to start with ERROR instead got: %s", actualLog)
-	}
-	if !strings.HasSuffix(actualLog, expectedLog) {
-		t.Errorf("Expected log to end with '%s' instead got: %s", expectedLog, actualLog)
-	}
+	verify(t, actualLog, expectedLog, logLevel.String())
 }
 
 func TestFatalLogging(t *testing.T) {
-	if os.Getenv("TEST_FATAL_LOGGING") == "1" {
+	envVar := "TEST_FATAL_LOGGING"
+	if os.Getenv(envVar) == "1" {
+		logLevel = loglevel.FATAL
 		Fatal("Test fatal log")
 		return
 	}
 
-	cmd := exec.Command(os.Args[0], "-test.run=TestFatalLogging")
-	cmd.Env = append(os.Environ(), "TEST_FATAL_LOGGING=1")
-	cmdOutput, _ := cmd.StderrPipe()
-
-	if err := cmd.Start(); err != nil {
-		t.Fatal(err)
-	}
-
-	b, _ := ioutil.ReadAll(cmdOutput)
-	actualLog := string(b)
+	actualLog := runCmd(t, "TestFatalLogging", envVar)
 	expectedLog := "Test fatal log\n"
-
-	if !strings.HasPrefix(actualLog, "FATAL") {
-		t.Errorf("Expected log to start with FATAL instead got: %s", actualLog)
-	}
-	if !strings.HasSuffix(actualLog, expectedLog) {
-		t.Errorf("Expected log to end with '%s' instead got: %s", expectedLog, actualLog)
-	}
-
-	err := cmd.Wait()
-	if e, ok := err.(*exec.ExitError); !ok || e.Success() {
-		t.Fatalf("Process ran with err %v, want exit status 1", err)
-	}
+	verify(t, actualLog, expectedLog, loglevel.FATAL.String())
 }
 
 func TestFatalfLogging(t *testing.T) {
-	if os.Getenv("TEST_FATAL_LOGGING") == "1" {
+	envVar := "TEST_FATAL_LOGGING"
+	if os.Getenv(envVar) == "1" {
+		logLevel = loglevel.FATAL
 		Fatalf("Test fatalf log: %d %s", 3, "fatalf")
 		return
 	}
 
-	cmd := exec.Command(os.Args[0], "-test.run=TestFatalfLogging")
-	cmd.Env = append(os.Environ(), "TEST_FATAL_LOGGING=1")
-	cmdOutput, _ := cmd.StderrPipe()
-
-	if err := cmd.Start(); err != nil {
-		t.Fatal(err)
-	}
-
-	b, _ := ioutil.ReadAll(cmdOutput)
-	actualLog := string(b)
+	actualLog := runCmd(t, "TestFatalfLogging", envVar)
 	expectedLog := "Test fatalf log: 3 fatalf\n"
+	verify(t, actualLog, expectedLog, loglevel.FATAL.String())
+}
 
-	if !strings.HasPrefix(actualLog, "FATAL") {
-		t.Errorf("Expected log to start with FATAL instead got: %s", actualLog)
-	}
-	if !strings.HasSuffix(actualLog, expectedLog) {
-		t.Errorf("Expected log to end with '%s' instead got: %s", expectedLog, actualLog)
-	}
+func TestPanicLogging(t *testing.T) {
+	redirectLogOutputs()
+	defer buf.Reset()
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("Expected code to panic but did not")
+		}
+		expectedLog := "Test Panic Log\n"
+		actualLog := buf.String()
+		verify(t, actualLog, expectedLog, logLevel.String())
+	}()
 
-	err := cmd.Wait()
-	if e, ok := err.(*exec.ExitError); !ok || e.Success() {
-		t.Fatalf("Process ran with err %v, want exit status 1", err)
-	}
+	logLevel = loglevel.PANIC
+	Panic("Test Panic Log")
+}
+
+func TestPanicfLogging(t *testing.T) {
+	redirectLogOutputs()
+	defer buf.Reset()
+	defer func() {
+		if r := recover(); r == nil {
+			t.Error("Expected code to panic but did not")
+		}
+
+		expectedLog := "Test Panic Log: 10 panic\n"
+		actualLog := buf.String()
+		verify(t, actualLog, expectedLog, logLevel.String())
+	}()
+
+	logLevel = loglevel.PANIC
+	Panicf("Test Panic Log: %d %s", 10, "panic")
 }
 
 func redirectLogOutputs() {
 	if instance == nil {
 		RedirectStderr(&buf)
 		RedirectStdout(&buf)
+	}
+}
+
+func runCmd(t *testing.T, testName string, envVar string) string {
+	cmd := exec.Command(os.Args[0], "-test.run="+testName)
+	cmd.Env = append(os.Environ(), envVar+"=1")
+	cmdOutput, _ := cmd.StderrPipe()
+
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("Failed starting cmd with error %v", err)
+	}
+
+	b, _ := ioutil.ReadAll(cmdOutput)
+
+	err := cmd.Wait()
+	if e, ok := err.(*exec.ExitError); !ok || e.Success() {
+		t.Fatalf("Process ran with err %v, wanted exit status 1", err)
+	}
+
+	return string(b)
+}
+
+func verify(t *testing.T, actualLog, expectedLog, expectedLogLevel string) {
+	if !strings.HasPrefix(actualLog, expectedLogLevel) {
+		t.Errorf("Expected log to start with %s instead got: %s", expectedLogLevel, actualLog)
+	}
+	if !strings.HasSuffix(actualLog, expectedLog) {
+		t.Errorf("Expected log to end with '%s' instead got: %s", expectedLog, actualLog)
 	}
 }
