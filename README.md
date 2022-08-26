@@ -1,4 +1,4 @@
-# Simple Go Logger
+# Simple Go Logger [![GoDoc](https://pkg.go.dev/badge/github.com/hbbtekademy/hbb-go-logger?status.svg)](https://pkg.go.dev/github.com/hbbtekademy/hbb-go-logger) [![Go Report Card](https://goreportcard.com/badge/github.com/hbbtekademy/hbb-go-logger)](https://goreportcard.com/report/github.com/hbbtekademy/hbb-go-logger)
 This is a simple wrapper over the standard library [log](https://pkg.go.dev/log) package with ability to log at different log levels and set the required log level.
 
 ## Installation
