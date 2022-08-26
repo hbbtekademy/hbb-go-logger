@@ -2,82 +2,101 @@ package logger
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
-	"strings"
 	"sync"
+
+	"github.com/hbbtekademy/hbb-go-logger/loglevel"
 )
-
-type logLevel int
-
-const (
-	_ logLevel = iota
-	_DEBUG
-	_INFO
-	_ERROR
-	_FATAL
-	_PANIC
-)
-
-func (ll logLevel) String() string {
-	switch ll {
-	case _DEBUG:
-		return "DEBUG"
-	case _INFO:
-		return "INFO"
-	case _ERROR:
-		return "ERROR"
-	case _FATAL:
-		return "FATAL"
-	case _PANIC:
-		return "PANIC"
-	default:
-		return ""
-	}
-}
 
 var (
-	once     sync.Once
-	llEnvVar string = "LOG_LEVEL"
-	instance logger
+	once      sync.Once
+	logLevel  loglevel.LogLevel = loglevel.INFO
+	instance  logger
+	outWriter io.Writer = os.Stdout
+	errWriter io.Writer = os.Stderr
 )
 
+// Set the LogLevel. Should be done before writing any logs.
+func SetLogLevel(ll loglevel.LogLevel) {
+	if logLevel == ll {
+		return
+	}
+
+	if instance != nil {
+		instance.errorf("LogLevel should be set before writing any logs. LogLevel will continue to be %s", logLevel)
+		return
+	}
+	logLevel = ll
+}
+
+// Redirect Stdout to required io.Writer. By default LogLevels DEBUG and INFO are written to Stdout.
+// Redirection should be done before any logs are written.
+func RedirectStdout(out io.Writer) {
+	if instance != nil {
+		instance.error("Stdout redirection should be done before writing any logs")
+		return
+	}
+	outWriter = out
+}
+
+// Redirect Stderr to required io.Writer. By default all LogLevels except DEBUG and INFO are written to Stderr
+// Redirection should be done before any logs are written.
+func RedirectStderr(out io.Writer) {
+	if instance != nil {
+		instance.error("Stderr redirection should be done before writing any logs")
+		return
+	}
+	errWriter = out
+}
+
+// Debug writes logs at DEBUG level.
 func Debug(v ...interface{}) {
 	getInstance().debug(v...)
 }
 
+// Debugf writes logs at DEBUG level formatted according to the format specifier.
 func Debugf(format string, v ...interface{}) {
 	getInstance().debugf(format, v...)
 }
 
+// Info writes logs at INFO level
 func Info(v ...interface{}) {
 	getInstance().info(v...)
 }
 
+// Infof writes logs at INFO level formatted according to the format specifier.
 func Infof(format string, v ...interface{}) {
 	getInstance().infof(format, v...)
 }
 
+// Error writes logs at ERROR level
 func Error(v ...interface{}) {
 	getInstance().error(v...)
 }
 
+// Errorf writes logs at ERROR level formatted according to the format specifier.
 func Errorf(format string, v ...interface{}) {
 	getInstance().errorf(format, v...)
 }
 
+// Fatal writes logs at FATAL level followed by call to os.Exit(1)
 func Fatal(v ...interface{}) {
 	getInstance().fatal(v...)
 }
 
+// Fatalf writes logs at FATAL level formatted according to the format specifier followed by call to os.Exit(1)
 func Fatalf(format string, v ...interface{}) {
 	getInstance().fatalf(format, v...)
 }
 
+// Panic writes logs at PANIC level followed by call to panic()
 func Panic(v ...interface{}) {
 	getInstance().panic(v...)
 }
 
+// Panic writes logs at PANIC level formatted according to the format specifier followed by call to panic()
 func Panicf(format string, v ...interface{}) {
 	getInstance().panicf(format, v...)
 }
@@ -96,7 +115,6 @@ type logger interface {
 }
 
 type stdLogger struct {
-	logLevel    logLevel
 	debugLogger *log.Logger
 	infoLogger  *log.Logger
 	errLogger   *log.Logger
@@ -105,57 +123,57 @@ type stdLogger struct {
 }
 
 func (l stdLogger) debug(v ...interface{}) {
-	if l.logLevel <= _DEBUG {
+	if logLevel <= loglevel.DEBUG {
 		l.debugLogger.Output(3, fmt.Sprintln(v...))
 	}
 }
 
 func (l stdLogger) debugf(format string, v ...interface{}) {
-	if l.logLevel <= _DEBUG {
+	if logLevel <= loglevel.DEBUG {
 		l.debugLogger.Output(3, fmt.Sprintf(format, v...))
 	}
 }
 
 func (l stdLogger) info(v ...interface{}) {
-	if l.logLevel <= _INFO {
+	if logLevel <= loglevel.INFO {
 		l.infoLogger.Output(3, fmt.Sprintln(v...))
 	}
 }
 
 func (l stdLogger) infof(format string, v ...interface{}) {
-	if l.logLevel <= _INFO {
+	if logLevel <= loglevel.INFO {
 		l.infoLogger.Output(3, fmt.Sprintf(format, v...))
 	}
 }
 
 func (l *stdLogger) error(v ...interface{}) {
-	if l.logLevel <= _ERROR {
+	if logLevel <= loglevel.ERROR {
 		l.errLogger.Output(3, fmt.Sprintln(v...))
 	}
 }
 
 func (l stdLogger) errorf(format string, v ...interface{}) {
-	if l.logLevel <= _ERROR {
+	if logLevel <= loglevel.ERROR {
 		l.errLogger.Output(3, fmt.Sprintf(format, v...))
 	}
 }
 
 func (l *stdLogger) fatal(v ...interface{}) {
-	if l.logLevel <= _FATAL {
+	if logLevel <= loglevel.FATAL {
 		l.fatalLogger.Output(3, fmt.Sprintln(v...))
 	}
 	os.Exit(1)
 }
 
 func (l stdLogger) fatalf(format string, v ...interface{}) {
-	if l.logLevel <= _FATAL {
+	if logLevel <= loglevel.FATAL {
 		l.fatalLogger.Output(3, fmt.Sprintf(format, v...))
 	}
 	os.Exit(1)
 }
 
 func (l *stdLogger) panic(v ...interface{}) {
-	if l.logLevel <= _PANIC {
+	if logLevel <= loglevel.PANIC {
 		s := fmt.Sprintln(v...)
 		l.panicLogger.Output(3, s)
 		panic(s)
@@ -163,7 +181,7 @@ func (l *stdLogger) panic(v ...interface{}) {
 }
 
 func (l stdLogger) panicf(format string, v ...interface{}) {
-	if l.logLevel <= _PANIC {
+	if logLevel <= loglevel.PANIC {
 		s := fmt.Sprintf(format, v...)
 		l.panicLogger.Output(3, s)
 		panic(s)
@@ -172,47 +190,14 @@ func (l stdLogger) panicf(format string, v ...interface{}) {
 
 func getInstance() logger {
 	once.Do(func() {
-		logLevel := getLogLevel()
 		instance = &stdLogger{
-			logLevel:    logLevel,
-			debugLogger: log.New(os.Stdout, "DEBUG ", log.Lshortfile|log.LstdFlags),
-			infoLogger:  log.New(os.Stdout, "INFO  ", log.Lshortfile|log.LstdFlags),
-			errLogger:   log.New(os.Stderr, "ERROR ", log.Lshortfile|log.LstdFlags),
-			fatalLogger: log.New(os.Stderr, "FATAL ", log.Lshortfile|log.LstdFlags),
-			panicLogger: log.New(os.Stderr, "PANIC ", log.Lshortfile|log.LstdFlags),
+			debugLogger: log.New(outWriter, "DEBUG ", log.Lshortfile|log.LstdFlags),
+			infoLogger:  log.New(outWriter, "INFO  ", log.Lshortfile|log.LstdFlags),
+			errLogger:   log.New(errWriter, "ERROR ", log.Lshortfile|log.LstdFlags),
+			fatalLogger: log.New(errWriter, "FATAL ", log.Lshortfile|log.LstdFlags),
+			panicLogger: log.New(errWriter, "PANIC ", log.Lshortfile|log.LstdFlags),
 		}
 	})
 
 	return instance
-}
-
-func SetLogLevelEnvVar(envVar string) {
-	if instance != nil {
-		instance.error("Logger already created")
-		instance.errorf("Log Level Env Variable %s should be set before creating an instance of the logger", envVar)
-		return
-	}
-	llEnvVar = envVar
-}
-
-func getLogLevel() logLevel {
-	fmt.Fprintf(os.Stdout, "Getting Log Level from %s env var. Call logger.SetLogLevelEnvVar to override this value\n", llEnvVar)
-	level := strings.TrimSpace(os.Getenv(llEnvVar))
-	ll := _DEBUG
-	if level != "" {
-		switch strings.ToLower(level) {
-		case "debug":
-			ll = _DEBUG
-		case "info":
-			ll = _INFO
-		case "error":
-			ll = _ERROR
-		case "fatal":
-			ll = _FATAL
-		case "panic":
-			ll = _PANIC
-		}
-	}
-	fmt.Fprintf(os.Stdout, "Log Level set to %s\n", ll)
-	return ll
 }
