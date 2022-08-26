@@ -15,7 +15,8 @@ go get -u github.com/hbbtekademy/hbb-go-logger
 
 Default Log Level is **INFO**.
 
-**DEBUG** and **INFO** write to **_stdout_**, all other log levels write to **_stderr_** by default.
+**DEBUG** and **INFO** write to **_stdout_**, all other log levels write to **_stderr_** by default.  
+This is inline with the [12 factor app](https://12factor.net)
 
 **FATAL** log executes os.Exit(1) after logging.
 
