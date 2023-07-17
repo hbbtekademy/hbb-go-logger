@@ -2,7 +2,7 @@ package logger
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -59,6 +59,23 @@ func TestInfofLogging(t *testing.T) {
 	actualLog := buf.String()
 
 	verify(t, actualLog, expectedLog, logLevel.String())
+}
+
+func TestCallDepthInfofLogging(t *testing.T) {
+	logLevel = loglevel.INFO
+
+	redirectLogOutputs()
+	defer buf.Reset()
+
+	testCallDepth()
+	expectedLog := "Test Info Log: 1 str\n"
+	actualLog := buf.String()
+
+	verify(t, actualLog, expectedLog, logLevel.String())
+}
+
+func testCallDepth() {
+	CallDepthInfof(4, "Test Info Log: %d %s", 1, "str")
 }
 
 func TestDebugLogging(t *testing.T) {
@@ -188,7 +205,7 @@ func runCmd(t *testing.T, testName string, envVar string) string {
 		t.Fatalf("Failed starting cmd with error %v", err)
 	}
 
-	b, _ := ioutil.ReadAll(cmdOutput)
+	b, _ := io.ReadAll(cmdOutput)
 
 	err := cmd.Wait()
 	if e, ok := err.(*exec.ExitError); !ok || e.Success() {

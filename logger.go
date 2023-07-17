@@ -25,7 +25,7 @@ func SetLogLevel(ll loglevel.LogLevel) {
 	}
 
 	if instance != nil {
-		instance.errorf("LogLevel should be set before writing any logs. LogLevel will continue to be %s", logLevel)
+		instance.errorf(3, "LogLevel should be set before writing any logs. LogLevel will continue to be %s", logLevel)
 		return
 	}
 	logLevel = ll
@@ -35,7 +35,7 @@ func SetLogLevel(ll loglevel.LogLevel) {
 // Redirection should be done before any logs are written.
 func RedirectStdout(out io.Writer) {
 	if instance != nil {
-		instance.error("Stdout redirection should be done before writing any logs")
+		instance.error(3, "Stdout redirection should be done before writing any logs")
 		return
 	}
 	outWriter = out
@@ -45,7 +45,7 @@ func RedirectStdout(out io.Writer) {
 // Redirection should be done before any logs are written.
 func RedirectStderr(out io.Writer) {
 	if instance != nil {
-		instance.error("Stderr redirection should be done before writing any logs")
+		instance.error(3, "Stderr redirection should be done before writing any logs")
 		return
 	}
 	errWriter = out
@@ -53,65 +53,115 @@ func RedirectStderr(out io.Writer) {
 
 // Debug writes logs at DEBUG level.
 func Debug(v ...interface{}) {
-	getInstance().debug(v...)
+	getInstance().debug(3, v...)
+}
+
+// CallDepthDebug is same as Debug with additional Call Depth for number of stack frames to ascend.
+func CallDepthDebug(depth int, v ...interface{}) {
+	getInstance().debug(depth, v...)
 }
 
 // Debugf writes logs at DEBUG level formatted according to the format specifier.
 func Debugf(format string, v ...interface{}) {
-	getInstance().debugf(format, v...)
+	getInstance().debugf(3, format, v...)
+}
+
+// CallDepthDebugf is same as Debugf with additional Call Depth for number of stack frames to ascend.
+func CallDepthDebugf(depth int, format string, v ...interface{}) {
+	getInstance().debugf(depth, format, v...)
 }
 
 // Info writes logs at INFO level
 func Info(v ...interface{}) {
-	getInstance().info(v...)
+	getInstance().info(3, v...)
+}
+
+// CallDepthInfo is same as Info with additional Call Depth for number of stack frames to ascend.
+func CallDepthInfo(depth int, v ...interface{}) {
+	getInstance().info(depth, v...)
 }
 
 // Infof writes logs at INFO level formatted according to the format specifier.
 func Infof(format string, v ...interface{}) {
-	getInstance().infof(format, v...)
+	getInstance().infof(3, format, v...)
+}
+
+// CallDepthInfof is same as Infof with additional Call Depth for number of stack frames to ascend.
+func CallDepthInfof(depth int, format string, v ...interface{}) {
+	getInstance().infof(depth, format, v...)
 }
 
 // Error writes logs at ERROR level
 func Error(v ...interface{}) {
-	getInstance().error(v...)
+	getInstance().error(3, v...)
+}
+
+// CallDepthError is same as Error with additional Call Depth for number of stack frames to ascend.
+func CallDepthError(depth int, v ...interface{}) {
+	getInstance().error(depth, v...)
 }
 
 // Errorf writes logs at ERROR level formatted according to the format specifier.
 func Errorf(format string, v ...interface{}) {
-	getInstance().errorf(format, v...)
+	getInstance().errorf(3, format, v...)
+}
+
+// CallDepthErrorf is same as Errorf with additional Call Depth for number of stack frames to ascend.
+func CallDepthErrorf(depth int, format string, v ...interface{}) {
+	getInstance().errorf(depth, format, v...)
 }
 
 // Fatal writes logs at FATAL level followed by call to os.Exit(1)
 func Fatal(v ...interface{}) {
-	getInstance().fatal(v...)
+	getInstance().fatal(3, v...)
+}
+
+// CallDepthFatal is same as Fatal with additional Call Depth for number of stack frames to ascend.
+func CallDepthFatal(depth int, v ...interface{}) {
+	getInstance().fatal(depth, v...)
 }
 
 // Fatalf writes logs at FATAL level formatted according to the format specifier followed by call to os.Exit(1)
 func Fatalf(format string, v ...interface{}) {
-	getInstance().fatalf(format, v...)
+	getInstance().fatalf(3, format, v...)
+}
+
+// CallDepthFatalf is same as Fataf with additional Call Depth for number of stack frames to ascend.
+func CallDepthFatalf(depth int, format string, v ...interface{}) {
+	getInstance().fatalf(depth, format, v...)
 }
 
 // Panic writes logs at PANIC level followed by call to panic()
 func Panic(v ...interface{}) {
-	getInstance().panic(v...)
+	getInstance().panic(3, v...)
+}
+
+// CallDepthPanic is same as Panic with additional Call Depth for number of stack frames to ascend.
+func CallDepthPanic(depth int, v ...interface{}) {
+	getInstance().panic(depth, v...)
 }
 
 // Panic writes logs at PANIC level formatted according to the format specifier followed by call to panic()
 func Panicf(format string, v ...interface{}) {
-	getInstance().panicf(format, v...)
+	getInstance().panicf(3, format, v...)
+}
+
+// CallDepthPanicf is same as Panicf with additional Call Depth for number of stack frames to ascend.
+func CallDepthPanicf(depth int, format string, v ...interface{}) {
+	getInstance().panicf(depth, format, v...)
 }
 
 type logger interface {
-	infof(format string, v ...interface{})
-	info(v ...interface{})
-	debug(v ...interface{})
-	debugf(format string, v ...interface{})
-	error(v ...interface{})
-	errorf(format string, v ...interface{})
-	fatal(v ...interface{})
-	fatalf(format string, v ...interface{})
-	panic(v ...interface{})
-	panicf(format string, v ...interface{})
+	infof(depth int, format string, v ...interface{})
+	info(depth int, v ...interface{})
+	debug(depth int, v ...interface{})
+	debugf(depth int, format string, v ...interface{})
+	error(depth int, v ...interface{})
+	errorf(depth int, format string, v ...interface{})
+	fatal(depth int, v ...interface{})
+	fatalf(depth int, format string, v ...interface{})
+	panic(depth int, v ...interface{})
+	panicf(depth int, format string, v ...interface{})
 }
 
 type stdLogger struct {
@@ -122,50 +172,50 @@ type stdLogger struct {
 	panicLogger *log.Logger
 }
 
-func (l stdLogger) debug(v ...interface{}) {
+func (l stdLogger) debug(depth int, v ...interface{}) {
 	if logLevel <= loglevel.DEBUG {
-		l.debugLogger.Output(3, fmt.Sprintln(v...))
+		l.debugLogger.Output(depth, fmt.Sprintln(v...))
 	}
 }
 
-func (l stdLogger) debugf(format string, v ...interface{}) {
+func (l stdLogger) debugf(depth int, format string, v ...interface{}) {
 	if logLevel <= loglevel.DEBUG {
-		l.debugLogger.Output(3, fmt.Sprintf(format, v...))
+		l.debugLogger.Output(depth, fmt.Sprintf(format, v...))
 	}
 }
 
-func (l stdLogger) info(v ...interface{}) {
+func (l stdLogger) info(depth int, v ...interface{}) {
 	if logLevel <= loglevel.INFO {
-		l.infoLogger.Output(3, fmt.Sprintln(v...))
+		l.infoLogger.Output(depth, fmt.Sprintln(v...))
 	}
 }
 
-func (l stdLogger) infof(format string, v ...interface{}) {
+func (l stdLogger) infof(depth int, format string, v ...interface{}) {
 	if logLevel <= loglevel.INFO {
-		l.infoLogger.Output(3, fmt.Sprintf(format, v...))
+		l.infoLogger.Output(depth, fmt.Sprintf(format, v...))
 	}
 }
 
-func (l *stdLogger) error(v ...interface{}) {
+func (l *stdLogger) error(depth int, v ...interface{}) {
 	if logLevel <= loglevel.ERROR {
-		l.errLogger.Output(3, fmt.Sprintln(v...))
+		l.errLogger.Output(depth, fmt.Sprintln(v...))
 	}
 }
 
-func (l stdLogger) errorf(format string, v ...interface{}) {
+func (l stdLogger) errorf(depth int, format string, v ...interface{}) {
 	if logLevel <= loglevel.ERROR {
-		l.errLogger.Output(3, fmt.Sprintf(format, v...))
+		l.errLogger.Output(depth, fmt.Sprintf(format, v...))
 	}
 }
 
-func (l *stdLogger) fatal(v ...interface{}) {
+func (l *stdLogger) fatal(depth int, v ...interface{}) {
 	if logLevel <= loglevel.FATAL {
-		l.fatalLogger.Output(3, fmt.Sprintf("%s. Exiting...", v...))
+		l.fatalLogger.Output(depth, fmt.Sprintf("%s. Exiting...", v...))
 	}
 	os.Exit(1)
 }
 
-func (l stdLogger) fatalf(format string, v ...interface{}) {
+func (l stdLogger) fatalf(depth int, format string, v ...interface{}) {
 	if logLevel <= loglevel.FATAL {
 		format = format + ". Exiting..."
 		l.fatalLogger.Output(3, fmt.Sprintf(format, v...))
@@ -173,7 +223,7 @@ func (l stdLogger) fatalf(format string, v ...interface{}) {
 	os.Exit(1)
 }
 
-func (l *stdLogger) panic(v ...interface{}) {
+func (l *stdLogger) panic(depth int, v ...interface{}) {
 	if logLevel <= loglevel.PANIC {
 		s := fmt.Sprintf("%s. Panicing...", v...)
 		l.panicLogger.Output(3, s)
@@ -181,7 +231,7 @@ func (l *stdLogger) panic(v ...interface{}) {
 	}
 }
 
-func (l stdLogger) panicf(format string, v ...interface{}) {
+func (l stdLogger) panicf(depth int, format string, v ...interface{}) {
 	if logLevel <= loglevel.PANIC {
 		format = format + ". Panicing..."
 		s := fmt.Sprintf(format, v...)
